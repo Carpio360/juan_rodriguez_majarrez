@@ -86,3 +86,25 @@ async def internal_error(request: Request, exc: Exception):
 
 def not_found():
     return JSONResponse(status_code=404, content={"error": "Nota no encontrada"})
+
+
+# ---------- Lectura (Estudiante A) ----------
+@app.get("/health")
+def health():
+    return {"status": "ok", "environment": os.getenv("APP_ENV", "development")}
+
+
+@app.get("/notes")
+def list_notes():
+    with get_conn() as conn:
+        rows = conn.execute("SELECT * FROM notes ORDER BY id").fetchall()
+    return [serialize(r) for r in rows]
+
+
+@app.get("/notes/{note_id}")
+def get_note(note_id: int):
+    with get_conn() as conn:
+        row = conn.execute("SELECT * FROM notes WHERE id = %s", (note_id,)).fetchone()
+    if row is None:
+        return not_found()
+    return serialize(row)
